@@ -30,8 +30,7 @@ jobs:
           done
           echo "--- Nachher ---"
           ls -la
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
