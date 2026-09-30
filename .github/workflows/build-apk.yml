@@ -1,4 +1,4 @@
-name: APK bauen
+name: Build APK
 
 on:
   workflow_dispatch:
@@ -6,33 +6,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+    - name: Auto-Unzip if present
+      run: |
+        echo "Checking for ZIP files..."
+        for z in *.zip; do
+          if [ -f "$z" ]; then
+            echo "🔓 Found $z - extracting..."
+            unzip -oq "$z"
+            echo "✅ Extracted!"
+          fi
+        done
 
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
 
-      - name: Entpacken und bauen
-        run: |
-          echo "--- Vorher ---"
-          ls -la
-          for z in *.zip; do
-            if [ -f "$z" ]; then
-              echo "Entpacke $z"
-              unzip -oq "$z"
-            fi
-          done
-          echo "--- Nachher ---"
-          ls -la
-          gradle assembleDebug
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '8.7'
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: app-debug.apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+    - name: Build APK
+      run: |
+        chmod +x gradlew || true
+        ./gradlew assembleDebug --no-daemon
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
+        if-no-files-found: ignore
